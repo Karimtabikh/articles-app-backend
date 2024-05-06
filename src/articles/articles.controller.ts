@@ -8,18 +8,18 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
-} from '@nestjs/common';
-import { ArticlesService } from './articles.service';
-import { CreateArticleDto } from './dto/create-article.dto';
-import { UpdateArticleDto } from './dto/update-article.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+} from "@nestjs/common";
+import type { ArticlesService } from "./articles.service";
+import type { CreateArticleDto } from "./dto/create-article.dto";
+import type { UpdateArticleDto } from "./dto/update-article.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
 
-@Controller('articles')
+@Controller("articles")
 export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor("file"))
   create(
     @UploadedFile() file: Express.Multer.File,
     @Body() createArticleDto: CreateArticleDto,
@@ -36,18 +36,18 @@ export class ArticlesController {
     return this.articlesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return this.articlesService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateArticleDto: UpdateArticleDto) {
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() updateArticleDto: UpdateArticleDto) {
     return this.articlesService.update(+id, updateArticleDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
+  @Delete(":id")
+  remove(@Param("id") id: string) {
     return this.articlesService.remove(+id);
   }
 }
