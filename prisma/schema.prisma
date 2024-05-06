@@ -14,7 +14,17 @@ datasource db {
 }
 
 model Article {
-  id          Int     @id @default(autoincrement())
-  title       String  @unique
+  id          Int           @id @default(autoincrement())
+  title       String        @unique
   description String?
+  category    String?
+  file        ArticleFile[]
+}
+
+model ArticleFile {
+  id        Int      @id @default(autoincrement())
+  name      String
+  path      String
+  Article   Article? @relation(fields: [articleId], references: [id])
+  articleId Int?
 }
