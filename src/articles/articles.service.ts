@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
+import { CreateFileDto } from 'src/files/dto/create-file.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -7,9 +8,23 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ArticlesService {
   constructor(private prisma: PrismaService) {}
 
-  create(createArticleDto: CreateArticleDto) {
-    // return 'This action adds a new article';
-    return this.prisma.article.create({ data: createArticleDto });
+  async create(
+    createArticleDto: CreateArticleDto,
+    files: Array<Express.Multer.File>,
+  ) {
+    const createdArticle = await this.prisma.article.create({
+      data: createArticleDto,
+    });
+
+    const Filespromise = files.map((file) => {
+      return this.prisma.file.create({
+        data: { name: file.filename, articleId: createdArticle.id },
+      });
+    });
+
+    await Promise.all(Filespromise);
+
+    return createdArticle;
   }
 
   findAll() {
@@ -22,10 +37,13 @@ export class ArticlesService {
   }
 
   update(id: number, updateArticleDto: UpdateArticleDto) {
-    return `This action updates a #${id} article`;
+    return this.prisma.article.update({
+      where: { id },
+      data: updateArticleDto,
+    });
   }
 
   remove(id: number) {
-    return `This action removes a #${id} article`;
+    return this.prisma.article.delete({ where: { id } });
   }
 }
