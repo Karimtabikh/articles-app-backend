@@ -9,6 +9,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -18,6 +19,7 @@ import {
   FileInterceptor,
   FilesInterceptor,
 } from '@nestjs/platform-express';
+import { stringify } from 'querystring';
 
 @Controller('articles')
 export class ArticlesController {
@@ -32,22 +34,15 @@ export class ArticlesController {
     return this.articlesService.create(createArticleDto, files);
   }
 
-  // @Post()
-  // @UseInterceptors(FileInterceptor('file'))
-  // create(
-  //   @UploadedFile() file: Express.Multer.File,
-  //   @Body() createArticleDto: CreateArticleDto,
-  // ) {
-  //   if (file) {
-  //     createArticleDto.filePath = file.path;
-  //     console.log(file);
-  //   }
-  //   // return this.articlesService.create(createArticleDto);
-  // }
-
   @Get()
-  findAll() {
-    return this.articlesService.findAll();
+  getArticlesWithPagination(@Query('cursor') cursor?: string) {
+    const cursorNumber = cursor ? +cursor : undefined;
+    return this.articlesService.getArticlesWithPagination(cursorNumber);
+  }
+
+  @Get('all')
+  getAllArticles() {
+    return this.articlesService.getAllArticles();
   }
 
   @Get(':id')

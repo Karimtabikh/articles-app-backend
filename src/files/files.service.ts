@@ -12,7 +12,13 @@ export class FilesService {
   }
 
   findAll() {
-    return this.prisma.file.findMany();
+    return this.prisma.file.findMany({
+      where: {
+        articleId: {
+          gte: 2
+        }
+      }
+    });
   }
 
   findOne(id: number) {
