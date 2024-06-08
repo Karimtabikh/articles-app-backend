@@ -28,29 +28,64 @@ export class ArticlesService {
     return createdArticle;
   }
 
-  async getArticlesWithPagination(cursor?: number) {
+  async getCategories() {
+    return this.prisma.article.findMany({
+      select: {
+        category: true,
+      },
+      distinct: ['category'],
+    });
+  }
+
+  async getArticlesWithPagination(query) {
+    // http://localhost:3000/articles?category=technology&startDate=2024-06-01&endDate=2024-06-5&title=re&description=ov&sortBy=createdAt&sortOrder=desc
+
     const findManyArgs: any = {
-      take: 9,
-      // include: {
-      //   files: true,
-      // },
+      // take: 9,
     };
 
-    if (cursor) {
-      findManyArgs.cursor = {
-        id: cursor,
-      };
-      findManyArgs.skip = 1;
-    }
+    // if (query.cursor) {
+    //   findManyArgs.cursor = {
+    //     id: +query.cursor,
+    //   };
+    //   findManyArgs.skip = 1;
+    // }
+
+    findManyArgs.where = {
+      title: {
+        contains: query.title,
+        mode: 'insensitive',
+      },
+      description: {
+        contains: query.description,
+        mode: 'insensitive',
+      },
+      category: {
+        contains: query.category,
+      },
+      createdAt: {
+        gte: query.startDate
+          ? new Date(query.startDate).toISOString()
+          : undefined,
+        lte: query.endDate ? new Date(query.endDate).toISOString() : undefined,
+      },
+    };
+
+    findManyArgs.orderBy = {
+      [query.sortBy]: query.sortOrder,
+    };
+
+    console.log(findManyArgs);
 
     const [data, totalArticles] = await Promise.all([
-      // this.prisma.article.findMany(findManyArgs),
       this.prisma.article.findMany(findManyArgs),
       this.prisma.article.count(),
     ]);
 
-    const nextId = cursor < totalArticles ? data[data.length - 1].id + 1 : null;
-    return { data, nextId };
+    // const nextId =
+    // query.cursor < totalArticles ? data[data.length - 1].id + 1 : null;
+    // return { data, nextId };
+    return { data };
   }
 
   getAllArticles() {

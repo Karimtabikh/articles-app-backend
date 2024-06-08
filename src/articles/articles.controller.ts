@@ -35,14 +35,20 @@ export class ArticlesController {
   }
 
   @Get()
-  getArticlesWithPagination(@Query('cursor') cursor?: string) {
-    const cursorNumber = cursor ? +cursor : undefined;
-    return this.articlesService.getArticlesWithPagination(cursorNumber);
+  getArticlesWithPagination(@Query() query) {
+    // const cursorNumber = query.cursor ? +query.cursor : undefined;
+    // const order = query.order ? query.order : undefined;
+    return this.articlesService.getArticlesWithPagination(query);
   }
 
   @Get('all')
   getAllArticles() {
     return this.articlesService.getAllArticles();
+  }
+
+  @Get('categories')
+  getArticlesCategories() {
+    return this.articlesService.getCategories();
   }
 
   @Get(':id')
