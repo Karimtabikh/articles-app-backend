@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -36,8 +37,6 @@ export class ArticlesController {
 
   @Get()
   getArticlesWithPagination(@Query() query) {
-    // const cursorNumber = query.cursor ? +query.cursor : undefined;
-    // const order = query.order ? query.order : undefined;
     return this.articlesService.getArticlesWithPagination(query);
   }
 

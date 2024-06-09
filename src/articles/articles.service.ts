@@ -1,9 +1,11 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { CreateFileDto } from 'src/files/dto/create-file.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Article, Prisma } from '@prisma/client';
+import { skip } from 'node:test';
 
 @Injectable()
 export class ArticlesService {
@@ -38,18 +40,9 @@ export class ArticlesService {
   }
 
   async getArticlesWithPagination(query) {
-    // http://localhost:3000/articles?category=technology&startDate=2024-06-01&endDate=2024-06-5&title=re&description=ov&sortBy=createdAt&sortOrder=desc
-
     const findManyArgs: any = {
-      // take: 9,
+      take: 9,
     };
-
-    // if (query.cursor) {
-    //   findManyArgs.cursor = {
-    //     id: +query.cursor,
-    //   };
-    //   findManyArgs.skip = 1;
-    // }
 
     findManyArgs.where = {
       title: {
@@ -75,17 +68,18 @@ export class ArticlesService {
       [query.sortBy]: query.sortOrder,
     };
 
-    console.log(findManyArgs);
+    let page = 0;
+    if (query.page) {
+      page = query.page;
+      findManyArgs.skip = +query.page * 9;
+    }
 
-    const [data, totalArticles] = await Promise.all([
-      this.prisma.article.findMany(findManyArgs),
-      this.prisma.article.count(),
-    ]);
+    const totalPosts = await this.prisma.article.count();
+    const totalPages = Math.floor(totalPosts / 9);
 
-    // const nextId =
-    // query.cursor < totalArticles ? data[data.length - 1].id + 1 : null;
-    // return { data, nextId };
-    return { data };
+    const posts = await this.prisma.article.findMany(findManyArgs);
+
+    return { posts, hasMore: page < totalPages, totalPages };
   }
 
   getAllArticles() {
