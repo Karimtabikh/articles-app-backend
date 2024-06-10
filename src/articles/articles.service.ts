@@ -44,26 +44,31 @@ export class ArticlesService {
       take: 9,
     };
 
+    console.log(query);
+
     findManyArgs.where = {
-      title: {
-        contains: query.title,
-        mode: 'insensitive',
-      },
-      description: {
-        contains: query.description,
-        mode: 'insensitive',
-      },
+      OR: [
+        {
+          title: {
+            contains: query.search ? query.search : '',
+            mode: 'insensitive',
+          },
+        },
+        {
+          description: {
+            contains: query.search ? query.search : '',
+            mode: 'insensitive',
+          },
+        },
+      ],
       category: {
         contains: query.category,
       },
       createdAt: {
-        gte: query.startDate
-          ? new Date(query.startDate).toISOString()
-          : undefined,
-        lte: query.endDate ? new Date(query.endDate).toISOString() : undefined,
+        gte: !!query?.startDate ? query.startDate : undefined,
+        lte: !!query?.endDate ? query.endDate : undefined,
       },
     };
-
     findManyArgs.orderBy = {
       [query.sortBy]: query.sortOrder,
     };
@@ -74,10 +79,12 @@ export class ArticlesService {
       findManyArgs.skip = +query.page * 9;
     }
 
-    const totalPosts = await this.prisma.article.count();
-    const totalPages = Math.floor(totalPosts / 9);
+    const [posts, totalPosts] = await this.prisma.$transaction([
+      this.prisma.article.findMany(findManyArgs),
+      this.prisma.article.count({ where: findManyArgs.where }),
+    ]);
 
-    const posts = await this.prisma.article.findMany(findManyArgs);
+    const totalPages = Math.floor(totalPosts / 9);
 
     return { posts, hasMore: page < totalPages, totalPages };
   }
