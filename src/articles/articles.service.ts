@@ -31,11 +31,15 @@ export class ArticlesService {
   }
 
   async getCategories() {
-    return this.prisma.article.findMany({
+    const data = await this.prisma.article.findMany({
       select: {
         category: true,
       },
       distinct: ['category'],
+    });
+
+    return data.map((e) => {
+      return e.category;
     });
   }
 
@@ -43,8 +47,6 @@ export class ArticlesService {
     const findManyArgs: any = {
       take: 9,
     };
-
-    console.log(query);
 
     findManyArgs.where = {
       OR: [
@@ -61,14 +63,20 @@ export class ArticlesService {
           },
         },
       ],
-      category: {
-        contains: query.category,
-      },
       createdAt: {
         gte: !!query?.startDate ? query.startDate : undefined,
         lte: !!query?.endDate ? query.endDate : undefined,
       },
     };
+
+    if (query.category && query.category.length > 0) {
+      findManyArgs.where = {
+        category: {
+          in: query.category ? query.category.split(',') : '',
+        },
+      };
+    }
+
     findManyArgs.orderBy = {
       [query.sortBy]: query.sortOrder,
     };
@@ -78,6 +86,7 @@ export class ArticlesService {
       page = query.page;
       findManyArgs.skip = +query.page * 9;
     }
+
 
     const [posts, totalPosts] = await this.prisma.$transaction([
       this.prisma.article.findMany(findManyArgs),
