@@ -44,30 +44,36 @@ export class ArticlesService {
   }
 
   async getArticlesWithPagination(query) {
-    const findManyArgs: any = {
+    const findManyArgs: Prisma.ArticleFindManyArgs = {
       take: 9,
     };
+    if (query.search) {
+      findManyArgs.where = {
+        OR: [
+          {
+            title: {
+              contains: query.search ? query.search : undefined,
+              mode: 'insensitive',
+            },
+          },
+          {
+            description: {
+              contains: query.search ? query.search : undefined,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      };
+    }
 
-    findManyArgs.where = {
-      OR: [
-        {
-          title: {
-            contains: query.search ? query.search : '',
-            mode: 'insensitive',
-          },
+    if (query.startDate || query.endDate) {
+      findManyArgs.where = {
+        createdAt: {
+          gte: !!query?.startDate ? query.startDate : undefined,
+          lte: !!query?.endDate ? query.endDate : undefined,
         },
-        {
-          description: {
-            contains: query.search ? query.search : '',
-            mode: 'insensitive',
-          },
-        },
-      ],
-      createdAt: {
-        gte: !!query?.startDate ? query.startDate : undefined,
-        lte: !!query?.endDate ? query.endDate : undefined,
-      },
-    };
+      };
+    }
 
     if (query.category && query.category.length > 0) {
       findManyArgs.where = {
@@ -78,7 +84,7 @@ export class ArticlesService {
     }
 
     findManyArgs.orderBy = {
-      [query.sortBy]: query.sortOrder,
+      title: query.sortOrder,
     };
 
     let page = 0;
@@ -87,15 +93,56 @@ export class ArticlesService {
       findManyArgs.skip = +query.page * 9;
     }
 
-
     const [posts, totalPosts] = await this.prisma.$transaction([
       this.prisma.article.findMany(findManyArgs),
       this.prisma.article.count({ where: findManyArgs.where }),
     ]);
 
+    const updatePostsHtml = (posts) => {
+      if (query.search) {
+        const searchedTerm = query.search.toLowerCase().trim();
+        const regExp = new RegExp(searchedTerm, 'ig');
+
+        const filteredData = posts.map((post) => {
+          let highlightedText = post.title;
+          let highlightedDescription = post.description;
+          let descriptionNeedsAdjust = false;
+
+          if (post.title.toLowerCase().includes(searchedTerm)) {
+            highlightedText = post.title.replace(
+              regExp,
+              "<mark class='bg-yellow-200'>$&</mark>",
+            );
+          }
+
+          if (post.description.toLowerCase().includes(searchedTerm)) {
+            highlightedDescription = post.description.replace(
+              regExp,
+              "<mark class='bg-yellow-200'>$&</mark>",
+            );
+          }
+          // Check if the term is beyond the first 3 lines
+          const searchedDescription = post.description.split(' ').join(" ");
+          console.log(searchedDescription);
+
+          return {
+            ...post,
+            title: highlightedText,
+            description: highlightedDescription,
+            descriptionNeedsAdjust,
+          };
+        });
+
+        posts = filteredData;
+      }
+      return posts;
+    };
+
+    const Updatedposts = updatePostsHtml(posts);
+
     const totalPages = Math.floor(totalPosts / 9);
 
-    return { posts, hasMore: page < totalPages, totalPages };
+    return { posts: Updatedposts, hasMore: page < totalPages, totalPages };
   }
 
   getAllArticles() {
